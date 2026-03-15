@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>加密貨幣報價</title>
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; background: #0a0a12; color: #fff; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    h1 { background: linear-gradient(90deg, #f7931a, #ffc107); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; font-size: 24px; }
+    .timer { font-size: 13px; color: #666; }
+    .timer span { color: #00d4ff; font-weight: bold; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .card { background: #12121f; border-radius: 10px; padding: 12px; }
+    .symbol { font-size: 14px; font-weight: bold; }
+    .name { font-size: 10px; color: #555; }
+    .price { font-size: 18px; font-weight: bold; margin: 6px 0; }
+    .green { color: #10b981; }
+    .red { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>💎 加密貨幣 (Top 30)</h1>
+    <div class="timer">更新倒數: <span id="countdown">5</span>秒 | <span id="lastUpdate">--:--:--</span></div>
+  </div>
+  <div class="grid" id="app"></div>
+  <script>
+    const CRYPTO = ['BTC','ETH','USDT','BNB','SOL','XRP','USDC','ADA','AVAX','DOGE','DOT','TRX','LINK','MATIC','LTC','DAI','UNI','ATOM','OKB','ETC','XMR','INJ','LDO','FIL','HBAR','APT','NEAR','VET','ALGO','ICP','QNT'];
+    const NAMES = {'BTC':'比特幣','ETH':'以太坊','USDT':'泰達幣','BNB':'幣安幣','SOL':'Solana','XRP':'瑞波','USDC':'USDC','ADA':'Cardano','AVAX':'雪崩','DOGE':'狗狗','DOT':'Polkadot','TRX':'波場','LINK':'Chainlink','MATIC':'Polygon','LTC':'萊特幣','DAI':'Dai','UNI':'Uniswap','ATOM':'Cosmos','OKB':'OKB','ETC':'以太經','XMR':'門羅','INJ':'Injective','LDO':'Lido','FIL':'Filecoin','HBAR':'Hedera','APT':'Aptos','NEAR':'NEAR','VET':'VeChain','ALGO':'Algorand','ICP':'ICP','QNT':'Quant'};
+
+    let countdown = 5;
+    
+    async function getQuote(sym) {
+      try { const r = await fetch('/api/quote?symbol=' + sym + 'USDT'); return await r.json(); } catch(e) { return null; }
+    }
+
+    async function load() {
+      for(const s of CRYPTO) {
+        const d = await getQuote(s);
+        if(d && d.price > 0) {
+          const c = d.change >= 0 ? 'green' : 'red';
+          const sign = d.change >= 0 ? '+' : '';
+          const el = document.getElementById('c-' + s);
+          if(el) {
+            el.querySelector('.price').className = 'price ' + c;
+            el.querySelector('.price').textContent = '$' + d.price.toLocaleString();
+            el.querySelector('.change').className = 'change ' + c;
+            el.querySelector('.change').textContent = sign + d.change.toFixed(2) + '%';
+          } else {
+            document.getElementById('app').innerHTML += '<div class="card" id="c-'+s+'"><div class="symbol">'+s+'</div><div class="name">'+NAMES[s]+'</div><div class="price '+c+'">$'+d.price.toLocaleString()+'</div><div class="change '+c+'">'+sign+d.change.toFixed(2)+'%</div></div>';
+          }
+        }
+      }
+      document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+    }
+
+    function tick() {
+      countdown--;
+      if(countdown <= 0) { countdown = 5; load(); }
+      document.getElementById('countdown').textContent = countdown;
+    }
+
+    load();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>
